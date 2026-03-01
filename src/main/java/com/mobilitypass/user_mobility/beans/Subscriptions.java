@@ -27,15 +27,4 @@ public class Subscriptions {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private String status;
-
-    public Subscriptions(String userId, String subscriptionType, String applicableTransport, Double discountPercentage,
-            LocalDateTime startDate, LocalDateTime endDate, String status) {
-        this.userId = userId;
-        this.subscriptionType = subscriptionType;
-        this.applicableTransport = applicableTransport;
-        this.discountPercentage = discountPercentage;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.status = status;
-    }
 }
