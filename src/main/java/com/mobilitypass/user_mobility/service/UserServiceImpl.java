@@ -16,6 +16,9 @@ import com.mobilitypass.user_mobility.dto.UserMobilitySummaryDTO;
 import com.mobilitypass.user_mobility.repository.SubscriptionRepository;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import com.mobilitypass.user_mobility.proxy.BillingProxy;
+import com.mobilitypass.user_mobility.proxy.BillingProxy.CreateAccountRequest;
+
 import java.util.List;
 
 /**
@@ -34,6 +37,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private SubscriptionRepository subRepository;
 
+    @Autowired
+    private BillingProxy billingProxy;
+
     @Override
     public UserProfile createProfile(UserProfileDTO dto) {
         UserProfile profile = UserProfile.builder()
@@ -48,6 +54,15 @@ public class UserServiceImpl implements UserService {
 
         // Auto-activation du pass lors de la création du profil (Standard par défaut)
         passService.activatePass(savedProfile.getKeycloakId());
+
+        // Créer le compte facturation via API Synchrone
+        try {
+            billingProxy.createAccount(new CreateAccountRequest(savedProfile.getKeycloakId(), "XOF"));
+        } catch (Exception e) {
+            // Logger l'erreur, mais ne pas faire échouer la création de l'utilisateur
+            // (Idéalement, on utilise RabbitMQ pour ce type de pattern)
+            System.err.println("Échec de la création du compte de facturation: " + e.getMessage());
+        }
 
         return savedProfile;
     }
