@@ -1,6 +1,8 @@
 package com.mobilitypass.user_mobility.service;
 
 import com.mobilitypass.user_mobility.beans.MobilityPass;
+import com.mobilitypass.user_mobility.enums.PassStatus;
+import com.mobilitypass.user_mobility.enums.PassType;
 import com.mobilitypass.user_mobility.error.ResourceNotFoundException;
 import com.mobilitypass.user_mobility.repository.MobilityPassRepository;
 import jakarta.transaction.Transactional;
@@ -23,16 +25,16 @@ public class PassServiceImpl implements PassService {
     @Override
     public MobilityPass activatePass(String userId) {
         return passRepository.findByUserId(userId).orElseGet(() -> {
-            MobilityPass newPass = new MobilityPass(userId, "ACTIVE", "STANDARD", 25.0);
+            MobilityPass newPass = new MobilityPass(userId, PassStatus.ACTIVE, PassType.STANDARD, 1200.0);
             return passRepository.save(newPass);
         });
     }
 
     @Override
-    public void changePassStatus(String userId, String status) {
+    public void changePassStatus(String userId, PassStatus status) {
         MobilityPass pass = passRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pass non trouvé pour : " + userId));
-        pass.setStatus(status.toUpperCase());
+        pass.setStatus(status);
         passRepository.save(pass);
     }
 
