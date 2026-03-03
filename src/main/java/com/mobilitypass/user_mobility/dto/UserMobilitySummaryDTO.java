@@ -1,7 +1,10 @@
 package com.mobilitypass.user_mobility.dto;
 
+import com.mobilitypass.user_mobility.enums.PassStatus;
+import com.mobilitypass.user_mobility.enums.PassType;
 import lombok.Builder;
 import lombok.Data;
+import java.util.List;
 
 @Data
 @Builder
@@ -11,9 +14,9 @@ public class UserMobilitySummaryDTO {
     private String lastName;
     private String email;
     private boolean hasActivePass;
-    private String passType;
-    private String passStatus;
+    private PassType passType;
+    private PassStatus passStatus;
     private Double dailyCap;
     private Double currentSpent;
-    private Double activeDiscountRate;
+    private List<ActiveSubscriptionDTO> activeSubscriptions;
 }
