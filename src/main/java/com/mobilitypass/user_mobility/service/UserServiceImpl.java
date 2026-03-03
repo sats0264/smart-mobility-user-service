@@ -2,6 +2,7 @@ package com.mobilitypass.user_mobility.service;
 
 import com.mobilitypass.user_mobility.beans.UserProfile;
 import com.mobilitypass.user_mobility.dto.UserProfileDTO;
+import com.mobilitypass.user_mobility.enums.PassStatus;
 import com.mobilitypass.user_mobility.error.ResourceNotFoundException;
 import com.mobilitypass.user_mobility.repository.UserProfileRepository;
 import jakarta.transaction.Transactional;
@@ -13,8 +14,12 @@ import java.time.LocalDateTime;
 import com.mobilitypass.user_mobility.beans.MobilityPass;
 import com.mobilitypass.user_mobility.beans.Subscriptions;
 import com.mobilitypass.user_mobility.dto.UserMobilitySummaryDTO;
+import com.mobilitypass.user_mobility.dto.ActiveSubscriptionDTO;
+import com.mobilitypass.user_mobility.dto.PricingContextDTO;
+import com.mobilitypass.user_mobility.dto.SubscriptionContextDTO;
 import com.mobilitypass.user_mobility.repository.SubscriptionRepository;
-import com.mobilitypass.user_mobility.repository.SubscriptionRepository;
+import com.mobilitypass.user_mobility.repository.SubscriptionOfferRepository;
+import com.mobilitypass.user_mobility.beans.SubscriptionOffer;
 
 import com.mobilitypass.user_mobility.proxy.BillingProxy;
 import com.mobilitypass.user_mobility.proxy.BillingProxy.CreateAccountRequest;
@@ -39,6 +44,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private BillingProxy billingProxy;
+
+    @Autowired
+    private SubscriptionOfferRepository subOfferRepository;
 
     @Override
     public UserProfile createProfile(UserProfileDTO dto) {
@@ -100,23 +108,55 @@ public class UserServiceImpl implements UserService {
         MobilityPass pass = passService.getUserPass(keycloakId);
         List<Subscriptions> activeSubs = subRepository.findByUserIdAndStatus(keycloakId, "ACTIVE");
 
-        /// TODO: Gerer abonnement de type type différent (ex: 20% sur TER, 10% sur BRT,
-        /// etc.) en fonction du type de pass et des règles métier
-        Double discount = activeSubs.stream()
-                .map(Subscriptions::getDiscountPercentage)
-                .findFirst().orElse(0.0);
+        List<ActiveSubscriptionDTO> subscriptionDTOs = activeSubs.stream()
+                .map(sub -> {
+                    String name = "Abonnement " + sub.getSubscriptionType();
+                    if (sub.getOfferId() != null) {
+                        name = subOfferRepository.findById(sub.getOfferId())
+                                .map(SubscriptionOffer::getName)
+                                .orElse(name);
+                    }
+                    return ActiveSubscriptionDTO.builder()
+                            .offerName(name)
+                            .subscriptionType(sub.getSubscriptionType())
+                            .applicableTransport(sub.getApplicableTransport())
+                            .discountPercentage(sub.getDiscountPercentage())
+                            .build();
+                })
+                .toList();
 
         return UserMobilitySummaryDTO.builder()
                 .keycloakId(keycloakId)
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .hasActivePass("ACTIVE".equalsIgnoreCase(pass.getStatus()))
+                .hasActivePass(PassStatus.ACTIVE.equals(pass.getStatus()))
                 .passType(pass.getPassType())
                 .passStatus(pass.getStatus())
                 .dailyCap(pass.getDailyCapAmount())
                 .currentSpent(pass.getTodaySpentAmount())
-                .activeDiscountRate(discount)
+                .activeSubscriptions(subscriptionDTOs)
+                .build();
+    }
+
+    @Override
+    public PricingContextDTO getPricingContext(String userId) {
+        MobilityPass pass = passService.getUserPass(userId);
+        List<Subscriptions> activeSubs = subRepository.findByUserIdAndStatus(userId, "ACTIVE");
+
+        List<SubscriptionContextDTO> subscriptionContexts = activeSubs.stream()
+                .map(sub -> SubscriptionContextDTO.builder()
+                        .applicableTransport(sub.getApplicableTransport())
+                        .discountPercentage(sub.getDiscountPercentage())
+                        .build())
+                .toList();
+
+        return PricingContextDTO.builder()
+                .hasActivePass(PassStatus.ACTIVE.equals(pass.getStatus()))
+                .passType(pass.getPassType())
+                .dailyCapAmount(pass.getDailyCapAmount())
+                .todaySpentAmount(pass.getTodaySpentAmount())
+                .activeSubscriptions(subscriptionContexts)
                 .build();
     }
 }
