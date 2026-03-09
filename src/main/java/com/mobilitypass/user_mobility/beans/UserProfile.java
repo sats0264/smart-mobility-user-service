@@ -24,4 +24,9 @@ public class UserProfile {
     private String lastName;
 
     private LocalDateTime createdAt;
+
+    @Builder.Default
+    private boolean active = true;
+
+    private String suspensionReason;
 }

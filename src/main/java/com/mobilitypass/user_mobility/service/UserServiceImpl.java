@@ -160,4 +160,25 @@ public class UserServiceImpl implements UserService {
                 .activeSubscriptions(subscriptionContexts)
                 .build();
     }
+
+    @Override
+    public List<UserProfile> getAllUsers() {
+        return profileRepository.findAll();
+    }
+
+    @Override
+    public UserProfile suspendUser(String keycloakId, String reason) {
+        UserProfile user = getUser(keycloakId);
+        user.setActive(false);
+        user.setSuspensionReason(reason);
+        return profileRepository.save(user);
+    }
+
+    @Override
+    public UserProfile reactivateUser(String keycloakId) {
+        UserProfile user = getUser(keycloakId);
+        user.setActive(true);
+        user.setSuspensionReason(null);
+        return profileRepository.save(user);
+    }
 }

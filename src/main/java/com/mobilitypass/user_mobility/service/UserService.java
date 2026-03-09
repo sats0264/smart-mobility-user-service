@@ -5,6 +5,8 @@ import com.mobilitypass.user_mobility.dto.UserMobilitySummaryDTO;
 import com.mobilitypass.user_mobility.dto.UserProfileDTO;
 import com.mobilitypass.user_mobility.dto.PricingContextDTO;
 
+import java.util.List;
+
 public interface UserService {
     UserProfile createProfile(UserProfileDTO dto);
 
@@ -15,4 +17,10 @@ public interface UserService {
     UserMobilitySummaryDTO getSummary(String keycloakId);
 
     PricingContextDTO getPricingContext(String userId);
+
+    List<UserProfile> getAllUsers();
+
+    UserProfile suspendUser(String keycloakId, String reason);
+
+    UserProfile reactivateUser(String keycloakId);
 }
